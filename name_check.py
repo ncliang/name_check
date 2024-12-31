@@ -4,23 +4,25 @@
 import argparse
 import codecs
 import re
-import urllib
+import urllib.error
+import urllib.parse
+import urllib.request
 
 import requests
 
-NAME_TEMPLATE = u'%s%s%s'
+NAME_TEMPLATE = '%s%s%s'
 CHECK_NAME_URL_TEMPLATE = 'http://www.123cha.com/xm/%s-0'
-REGEX = u'得分:(\d+)'
+REGEX = '得分:(\d+)'
 SKIP_CHARS = {
-    u'　', u'：', u'（', u'）', u' ', u'；', u'，', u'。', u'「', u'」', u'\n', u'ˋ'
+    '　', '：', '（', '）', ' ', '；', '，', '。', '「', '」', '\n', 'ˋ'
 }
 
 parser = argparse.ArgumentParser(description='Generate some name candidates.')
-parser.add_argument('--family-name', default='梁', help='Family name to use in generation',
-                    type=lambda s: unicode(s, 'utf8'))
-parser.add_argument('--middle-character', help='Optional fixed middle character',
-                    type=lambda s: unicode(s, 'utf8'))
-parser.add_argument('--text', help='Path to text file used for name generation. Must be utf-8 encoded', required=True)
+parser.add_argument('--family-name', default='梁', help='Family name to use in generation')
+parser.add_argument('--middle-character', help='Optional fixed middle character')
+parser.add_argument('--text',
+                    help='Path to text file used for name generation. Must be utf-8 encoded',
+                    required=True)
 parser.add_argument('--output', help='Path to text file used as output', default='output.txt')
 
 args = parser.parse_args()
@@ -31,7 +33,7 @@ with codecs.open(args.text, encoding='UTF-8') as input:
 inputs = ''.join(inputs)
 deduped_inputs = set(inputs)
 deduped_inputs -= SKIP_CHARS
-print 'Number of characters to try: %s' % len(deduped_inputs)
+print('Number of characters to try: %s' % len(deduped_inputs))
 
 
 def get_score(name_to_check):
@@ -48,7 +50,7 @@ def get_score(name_to_check):
 
 
 def get_url(name):
-    return CHECK_NAME_URL_TEMPLATE % urllib.quote(name.encode('utf-8'))
+    return CHECK_NAME_URL_TEMPLATE % urllib.parse.quote(name.encode('utf-8'))
 
 
 def name_generator():
@@ -67,7 +69,7 @@ outputs = []
 for name in name_generator():
     url = get_url(name)
     score = get_score(name)
-    print '(%s, %s, %s)' % (score, name, url)
+    print('(%s, %s, %s)' % (score, name, url))
     outputs.append((score, name, url))
     # time.sleep(0.5)
 
