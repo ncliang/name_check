@@ -3,16 +3,13 @@
 
 import argparse
 import codecs
-import re
-import urllib.error
-import urllib.parse
-import urllib.request
 
 import requests
+from lxml import etree
 
 NAME_TEMPLATE = '%s%s%s'
-CHECK_NAME_URL_TEMPLATE = 'http://www.123cha.com/xm/%s-0'
-REGEX = '得分:(\d+)'
+URL = 'https://www.zhanbuwang.com/xingmingceshi_2.php'
+XPATH = '/html/body/div/div/div[3]/div[2]/div/div[2]/div[1]/span'
 SKIP_CHARS = {
     '　', '：', '（', '）', ' ', '；', '，', '。', '「', '」', '\n', 'ˋ'
 }
@@ -37,20 +34,26 @@ print('Number of characters to try: %s' % len(deduped_inputs))
 
 
 def get_score(name_to_check):
-    url = get_url(name_to_check)
+    last_name = name_to_check[0]
+    first_name = name_to_check[1:]
+
+    form_data = {
+        "nametype": "1231",
+        "pf_xing": last_name,
+        "pf_ming": first_name,
+        "submit": "名字測試打分"
+    }
+
     try:
-        resp = requests.get(url, timeout=2)
+        resp = requests.post(URL, data=form_data)
     except Exception:
         return None
     page_content = resp.text
-    m = re.search(REGEX, page_content)
-    if m is not None:
-        return m.group(1)
-    return None
-
-
-def get_url(name):
-    return CHECK_NAME_URL_TEMPLATE % urllib.parse.quote(name.encode('utf-8'))
+    tree = etree.HTML(page_content)
+    try:
+        return tree.xpath(XPATH)[0].text
+    except IndexError:
+        return None
 
 
 def name_generator():
@@ -67,13 +70,12 @@ def name_generator():
 
 outputs = []
 for name in name_generator():
-    url = get_url(name)
     score = get_score(name)
-    print('(%s, %s, %s)' % (score, name, url))
-    outputs.append((score, name, url))
+    print('(%s, %s)' % (score, name))
+    outputs.append((score, name))
     # time.sleep(0.5)
 
 outputs.sort(reverse=True)
 with codecs.open(args.output, 'w', encoding='utf-8') as out_file:
-    for score, name, url in outputs:
-        out_file.write('(%s, %s, %s)\n' % (score, name, url))
+    for score, name in outputs:
+        out_file.write('(%s, %s)\n' % (score, name))
