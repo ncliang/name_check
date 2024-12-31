@@ -51,9 +51,9 @@ def get_score(name_to_check):
     page_content = resp.text
     tree = etree.HTML(page_content)
     try:
-        return tree.xpath(XPATH)[0].text
+        return int(tree.xpath(XPATH)[0].text)
     except IndexError:
-        return None
+        return -1
 
 
 def name_generator():
